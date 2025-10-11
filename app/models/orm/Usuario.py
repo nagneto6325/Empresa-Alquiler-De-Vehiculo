@@ -8,10 +8,10 @@ from database import Base
 class Usuario(Base):
     """Modelo de usuario con control de auditoria."""
 
-    __tablename__ = "usuarios"
+    __tablename__ = "usuarios"  # ✅ NOMBRE CORRECTO
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    username = Column(String(50), unique=True, nullable=False)
+    username = Column(String(100), unique=True, nullable=False)
     password = Column(String(100), nullable=False)
 
     fecha_creacion = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -22,4 +22,4 @@ class Usuario(Base):
     id_usuario_edicion = Column(String(36), nullable=True)
 
     def __str__(self):
-        return f"Usuario {self.username}"
+        return f"{self.username} ({self.id})"
