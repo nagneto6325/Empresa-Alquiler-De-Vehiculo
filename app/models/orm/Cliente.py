@@ -1,12 +1,13 @@
-"""Modelo de Cliente para la base de datos."""
+"""Modelo ORM de Cliente para la base de datos del sistema de alquiler."""
 
 import uuid
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime, ForeignKey
 from database import Base
 
+
 class Cliente(Base):
-    """Modelo de cliente con control de auditoria."""
+    """Representa un cliente en el sistema, con control de auditoría."""
 
     __tablename__ = "clientes"
 
@@ -16,9 +17,8 @@ class Cliente(Base):
     usuario_id = Column(String(36), ForeignKey("usuarios.id"), nullable=True)
 
     fecha_creacion = Column(DateTime, default=datetime.utcnow, nullable=False)
-    fecha_actualizacion = Column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    fecha_actualizacion = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
     id_usuario_creacion = Column(String(36), nullable=True)
     id_usuario_edicion = Column(String(36), nullable=True)
 
