@@ -1,151 +1,115 @@
-"""Punto de entrada principal del sistema de alquiler.
+"""Punto de entrada principal de la API del sistema de alquiler."""
 
-Este modulo gestiona la autenticacion de usuarios y el menu principal
-del sistema de alquiler de vehiculos. Proporciona funcionalidades
-de registro, login y navegacion al sistema principal.
-"""
-
-from database import init_db, SessionLocal
-from app.models.orm.Usuario import Usuario
-from app.models.orm.Cliente import Cliente
-from app.sistema_alquiler import SistemaAlquiler
+import uvicorn
+from fastapi import FastAPI, APIRouter
+from fastapi.middleware.cors import CORSMiddleware
+from database import init_db
 
 
-def registrar_usuario(username, password):
-    """Registra un nuevo usuario en el sistema.
-    
-    Args:
-        username (str): Nombre de usuario para el registro
-        password (str): Contrasena para el nuevo usuario
-        
-    Returns:
-        bool: True si el registro fue exitoso, False en caso contrario
-        
-    Raises:
-        Exception: Si ocurre un error durante el proceso de registro
-    """
-    db = SessionLocal()
+"""Intento de importación de endpoints desde las rutas esperadas."""
+try:
+    from app.models.api.endpoints.auth import router as auth_router
+    from app.models.api.endpoints.usuarios import router as usuarios_router
+    from app.models.api.endpoints.clientes import router as clientes_router
+    from app.models.api.endpoints.vehiculos import router as vehiculos_router
+    from app.models.api.endpoints.contratos import router as contratos_router
+    from app.models.api.endpoints.pagos import router as pagos_router
+    from app.models.api.endpoints.mantenimientos import router as mantenimientos_router
+
+    print("Endpoints cargados desde: app.models.api.endpoints")
+    ESTRUCTURA = "app.models.api.endpoints"
+
+except ImportError as e:
+    print(f"Error importando endpoints: {e}")
     try:
-        usuario_existente = db.query(Usuario).filter_by(username=username).first()
-        if usuario_existente:
-            print("El usuario ya existe.")
-            return False
+        from app.models.api.endpoints.auth import router as auth_router
+        from app.models.api.endpoints.usuarios import router as usuarios_router
+        from app.models.api.endpoints.clientes import router as clientes_router
+        from app.models.api.endpoints.vehiculos import router as vehiculos_router
+        from app.models.api.endpoints.contratos import router as contratos_router
+        from app.models.api.endpoints.pagos import router as pagos_router
+        from app.models.api.endpoints.mantenimientos import router as mantenimientos_router
 
-        nuevo_usuario = Usuario(
-            username=username,
-            password=password,
-            id_usuario_creacion="sistema",
-        )
-        db.add(nuevo_usuario)
-        db.commit()
+        print("Endpoints cargados desde: endpoints/")
+        ESTRUCTURA = "endpoints"
 
-        nuevo_cliente = Cliente(
-            nombre=username,
-            usuario_id=nuevo_usuario.id,
-            id_usuario_creacion="sistema",
-        )
-        db.add(nuevo_cliente)
-        db.commit()
+    except ImportError as e2:
+        print(f"Error importando endpoints: {e2}")
+        print("Creando routers básicos como fallback.")
+        ESTRUCTURA = "basica"
 
-        print("Usuario registrado con exito!")
-        return True
-
-    except Exception as e:
-        print(f"Error al registrar usuario: {e}")
-        db.rollback()
-        return False
-    finally:
-        db.close()
+        auth_router = APIRouter()
+        usuarios_router = APIRouter()
+        clientes_router = APIRouter()
+        vehiculos_router = APIRouter()
+        contratos_router = APIRouter()
+        pagos_router = APIRouter()
+        mantenimientos_router = APIRouter()
 
 
-def login(username, password):
-    """Autentica un usuario y devuelve el cliente asociado.
-    
-    Args:
-        username (str): Nombre de usuario para autenticar
-        password (str): Contrasena del usuario
-        
-    Returns:
-        tuple: Tupla con (cliente, usuario_id) si la autenticacion es exitosa,
-               (None, None) en caso contrario
-               
-    Raises:
-        Exception: Si ocurre un error durante el proceso de autenticacion
-    """
-    db = SessionLocal()
+"""Creación e inicialización de la aplicación FastAPI."""
+app = FastAPI(
+    title="Sistema de Alquiler de Vehículos API",
+    description="API RESTful para el sistema de alquiler de vehículos",
+    version="1.0.0",
+)
+
+
+"""Configuración del middleware CORS para permitir peticiones externas."""
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+"""Inclusión de los routers principales en la aplicación."""
+app.include_router(auth_router, prefix="/api/auth", tags=["Autenticación"])
+app.include_router(usuarios_router, prefix="/api/usuarios", tags=["Usuarios"])
+app.include_router(clientes_router, prefix="/api/clientes", tags=["Clientes"])
+app.include_router(vehiculos_router, prefix="/api/vehiculos", tags=["Vehículos"])
+app.include_router(contratos_router, prefix="/api/contratos", tags=["Contratos"])
+app.include_router(pagos_router, prefix="/api/pagos", tags=["Pagos"])
+app.include_router(
+    mantenimientos_router, prefix="/api/mantenimientos", tags=["Mantenimientos"]
+)
+
+print("Todos los routers incluidos correctamente.")
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Inicializa la base de datos y muestra información de arranque."""
     try:
-        usuario = db.query(Usuario).filter_by(username=username, password=password).first()
-        if usuario:
-            cliente = db.query(Cliente).filter_by(usuario_id=usuario.id).first()
-            if cliente:
-                print(f"Bienvenido {usuario.username}!")
-                return cliente, usuario.id
-        print("Credenciales invalidas")
-        return None, None
+        init_db()
+        print("Base de datos inicializada correctamente.")
     except Exception as e:
-        print(f"Error en login: {e}")
-        return None, None
-    finally:
-        db.close()
+        print(f"Error inicializando la base de datos: {e}")
+
+    print("API del Sistema de Alquiler iniciada correctamente.")
+    print("Documentación disponible en: http://localhost:8000/docs")
 
 
-def main():
-    """Funcion principal del sistema.
-    
-    Gestiona el flujo principal de la aplicacion incluyendo:
-    - Inicializacion de la base de datos
-    - Presentacion del menu principal
-    - Manejo de opciones del usuario
-    - Navegacion entre diferentes funcionalidades
-    """
-    print("=" * 50)
-    print("SISTEMA DE ALQUILER DE VEHICULOS")
-    print("=" * 50)
+@app.get("/")
+async def root():
+    """Endpoint raíz de la API principal."""
+    return {
+        "message": "Bienvenido a la API del Sistema de Alquiler de Vehículos",
+        "version": "1.0.0",
+        "status": "operational",
+        "database": "SQLAlchemy ORM",
+        "estructura": ESTRUCTURA,
+    }
 
-    init_db()
 
-    while True:
-        print("\n" + "=" * 30)
-        print("MENU PRINCIPAL")
-        print("=" * 30)
-        print("1. Login")
-        print("2. Registrar usuario")
-        print("3. Salir")
-
-        opcion = input("\nSeleccione una opcion: ").strip()
-
-        if opcion == "1":
-            print("\n--- INICIAR SESION ---")
-            username = input("Usuario: ").strip()
-            password = input("Contrasena: ").strip()
-
-            cliente, usuario_id = login(username, password)
-            if cliente and usuario_id:
-                sistema = SistemaAlquiler(cliente, usuario_id)
-                sistema.menu_principal()
-
-        elif opcion == "2":
-            print("\n--- REGISTRAR USUARIO ---")
-            username = input("Nuevo usuario: ").strip()
-            password = input("Contrasena: ").strip()
-
-            if len(username) < 3:
-                print("El usuario debe tener al menos 3 caracteres")
-                continue
-            if len(password) < 3:
-                print("La contrasena debe tener al menos 3 caracteres")
-                continue
-
-            registrar_usuario(username, password)
-
-        elif opcion == "3":
-            print("\nGracias por usar el sistema!")
-            break
-
-        else:
-            print("Opcion no valida. Intente nuevamente.")
+@app.get("/health")
+async def health_check():
+    """Verifica el estado de la API y la conexión a la base de datos."""
+    return {"status": "healthy", "database": "SQLAlchemy"}
 
 
 if __name__ == "__main__":
-    """Punto de ejecucion principal cuando el script se ejecuta directamente."""
-    main()
+    """Ejecuta el servidor Uvicorn en modo desarrollo."""
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

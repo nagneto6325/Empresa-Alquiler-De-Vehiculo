@@ -1,25 +1,5 @@
-Sistema de Alquiler de Vehículos
-
-Este proyecto es una aplicación de consola para la gestión de un sistema de alquiler de vehículos.  
+Este proyecto es una aplicación qe corre en la web para la gestión de un sistema de alquiler de vehículos.  
 Permite gestionar clientes, vehículos, contratos, pagos y mantenimientos, con control de usuarios y autenticación básica.
-
----
-
-📂 Estructura del proyecto
-
-proyecto_alquiler/
-├── app/
-│   ├── models/orm/         Modelos ORM con SQLAlchemy
-│   ├── sistema_alquiler.py Lógica principal del sistema
-│
-├── utils/
-│   └── auth.py             Módulo de autenticación (login)
-│
-├── database.py              Configuración de la base de datos
-├── menu.py                  Menú interactivo
-├── main.py                  Punto de entrada principal
-├── requirements.txt         Dependencias del proyecto
-└── README.md                Este archivo
 
 ---
 
@@ -79,3 +59,26 @@ El sistema mostrará un menú interactivo para:
 
 ---
 
+🚀 Nuevos Funcionamientos
+
+El sistema fue ampliado con una **API RESTful completa** desarrollada con **FastAPI** y **SQLAlchemy**, que reemplaza el menú de consola tradicional.
+
+Ahora incluye:
+
+- **Ejecución con Uvicorn** (`python main.py` o `uvicorn main:app --reload`) para iniciar el servidor.
+- **Rutas organizadas en módulos** dentro de la carpeta `app/models/api/endpoints`, separadas por entidad:
+  - `/api/clientes`
+  - `/api/vehiculos`
+  - `/api/contratos`
+  - `/api/pagos`
+  - `/api/mantenimientos`
+  - `/api/usuarios`
+- **Conexión a base de datos SQLite o PostgreSQL**, configurable mediante variable de entorno.
+- **Modelos ORM unificados con SQLAlchemy**, con control de auditoría (`fecha_creacion`, `fecha_actualizacion`, `id_usuario_creacion`, `id_usuario_edicion`).
+- **Autenticación y control de usuarios** integrados en la API.
+- **CORS habilitado** para permitir peticiones desde cualquier cliente.
+- **Documentación interactiva** disponible en:
+  - Swagger UI → http://localhost:8000/docs
+- **Validaciones automáticas** con Pydantic y manejo de errores HTTP detallado.
+
+Con estos cambios, el sistema puede utilizarse tanto desde una interfaz web como desde aplicaciones externas que consuman la API.
